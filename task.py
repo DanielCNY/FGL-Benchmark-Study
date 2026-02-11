@@ -1,4 +1,3 @@
-# task.py (simplified)
 from datasets.cora import CoraLoader
 from models.gcn import GCN
 
