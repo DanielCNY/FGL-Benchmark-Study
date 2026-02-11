@@ -3,7 +3,7 @@ import torch
 from torch_geometric.datasets import Planetoid
 import networkx as nx
 from torch_geometric.utils import to_networkx
-import community as community_louvain  # pip install python-louvain
+import community as community_louvain
 from collections import defaultdict
 from typing import Dict, Any, Tuple
 import numpy as np
@@ -11,7 +11,6 @@ import numpy as np
 from .base_loader import BaseGraphLoader
 
 class CoraLoader(BaseGraphLoader):
-    """Loader for the Cora dataset with Louvain partitioning."""
     
     def __init__(self, num_clients: int = 10, iid: bool = False, seed: int = 42):
         self.num_clients = num_clients
@@ -20,33 +19,26 @@ class CoraLoader(BaseGraphLoader):
         torch.manual_seed(seed)
         np.random.seed(seed)
         
-        # Dataset statistics
         self._feature_dim = None
         self._num_classes = None
         
     def load_data(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Load Cora and partition into client subgraphs."""
-        # 1. Load Cora
         dataset = Planetoid(root='./data', name='Cora')
         data = dataset[0]
         
-        # Store dataset stats
         self._feature_dim = dataset.num_features
         self._num_classes = dataset.num_classes
         
-        # 2. Partition the graph
         if self.iid:
             client_nodes = self._partition_iid(data.num_nodes)
         else:
             client_nodes = self._partition_louvain(data)
         
-        # 3. Prepare client datasets
         client_datasets = {}
         for cid, node_ids in client_nodes.items():
             client_data = self._create_client_data(data, node_ids, cid)
             client_datasets[cid] = client_data
         
-        # 4. Prepare global test set
         global_test_set = {
             'x': data.x,
             'y': data.y,
@@ -61,16 +53,13 @@ class CoraLoader(BaseGraphLoader):
         nx_graph = to_networkx(data, to_undirected=True)
         partition_map = community_louvain.best_partition(nx_graph)
         
-        # Group nodes by their partition label
         community_to_nodes = defaultdict(list)
         for node, part_id in partition_map.items():
             community_to_nodes[part_id].append(node)
         
-        # Take the largest communities
         sorted_communities = sorted(community_to_nodes.items(), 
                                     key=lambda x: len(x[1]), reverse=True)
         
-        # Create client assignments
         client_nodes = {}
         for i in range(min(self.num_clients, len(sorted_communities))):
             client_id = f"client_{i}"
@@ -121,7 +110,6 @@ class CoraLoader(BaseGraphLoader):
     def get_num_classes(self) -> int:
         return self._num_classes
 
-# Convenience function
 def load_cora_federated(num_clients=10, iid=False, seed=42):
     loader = CoraLoader(num_clients=num_clients, iid=iid, seed=seed)
     return loader.load_data()
