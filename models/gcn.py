@@ -3,7 +3,6 @@ import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
 class GCN(torch.nn.Module):
-    """Simple 2-layer GCN for node classification."""
     def __init__(self, in_channels: int, hidden_channels: int, out_channels: int):
         super().__init__()
         self.conv1 = GCNConv(in_channels, hidden_channels)

@@ -49,7 +49,6 @@ class CoraLoader(BaseGraphLoader):
         return client_datasets, global_test_set
     
     def _partition_louvain(self, data) -> Dict[str, torch.Tensor]:
-        """Partition graph using Louvain community detection (non-IID)."""
         nx_graph = to_networkx(data, to_undirected=True)
         partition_map = community_louvain.best_partition(nx_graph)
         
@@ -69,7 +68,6 @@ class CoraLoader(BaseGraphLoader):
         return client_nodes
     
     def _partition_iid(self, num_nodes: int) -> Dict[str, torch.Tensor]:
-        """Randomly partition nodes (IID baseline)."""
         all_nodes = torch.randperm(num_nodes)
         nodes_per_client = num_nodes // self.num_clients
         client_nodes = {}
@@ -83,7 +81,6 @@ class CoraLoader(BaseGraphLoader):
         return client_nodes
     
     def _create_client_data(self, data, node_ids: torch.Tensor, client_id: str) -> Dict[str, Any]:
-        """Create data dictionary for a single client."""
         perm = torch.randperm(len(node_ids))
         split_idx = int(0.8 * len(node_ids))
         train_ids = node_ids[perm[:split_idx]]

@@ -4,7 +4,6 @@ from flwr.server import ServerApp, ServerConfig, ServerAppComponents
 from flwr.server.strategy import FedAvg
 
 def server_fn(context: Context):
-    """Return ServerAppComponents for the simulation."""
     
     strategy = FedAvg(
         fraction_fit=1.0,
