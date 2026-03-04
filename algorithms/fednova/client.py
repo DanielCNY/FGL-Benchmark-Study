@@ -1,12 +1,19 @@
 import torch
 import torch.nn.functional as F
-from typing import List, Dict, Any, Tuple
 import numpy as np
-
+from typing import Dict, List, Tuple, Any
 from algorithms.base.client import BaseGraphClient
 
-class FedAvgGraphClient(BaseGraphClient):
-    
+class FedNovaGraphClient(BaseGraphClient):
+    def __init__(self, client_data, client_id):
+        super().__init__(client_data, client_id)
+        self.initial_params = None 
+
+    def set_parameters(self, parameters: List[np.ndarray]):
+        super().set_parameters(parameters)
+        self.initial_params = [p.clone().detach().to(self.device)
+                               for p in self.model.parameters()]
+
     def fit(self, parameters: List[np.ndarray], config: Dict[str, Any]) -> Tuple[List[np.ndarray], int, Dict[str, Any]]:
         self.set_parameters(parameters)
 
@@ -16,7 +23,7 @@ class FedAvgGraphClient(BaseGraphClient):
         train_mask = self.client_data['train_mask'].to(self.device)
 
         lr = config.get("learning_rate", 0.01)
-        local_epochs = config.get("local_epochs", 5)
+        local_epochs = config.get("local_epochs", 5) 
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 
@@ -28,8 +35,9 @@ class FedAvgGraphClient(BaseGraphClient):
             optimizer.step()
             self.last_loss = loss.item()
 
+        tau = local_epochs
+
         num_samples = train_mask.sum().item()
-        
         self.model.eval()
         with torch.no_grad():
             out = self.model(x, edge_index)
@@ -47,5 +55,6 @@ class FedAvgGraphClient(BaseGraphClient):
             "num_samples": num_samples,
             "local_epochs": local_epochs,
             "learning_rate": lr,
+            "tau": tau
         }
         return self.get_parameters(config), num_samples, metrics

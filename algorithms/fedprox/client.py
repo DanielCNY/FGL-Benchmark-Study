@@ -1,14 +1,21 @@
 import torch
 import torch.nn.functional as F
-from typing import List, Dict, Any, Tuple
 import numpy as np
+from typing import Dict, List, Tuple, Any
+from algorithms.base.client import BaseGraphClient 
 
-from algorithms.base.client import BaseGraphClient
+class FedProxGraphClient(BaseGraphClient):
+    def __init__(self, client_data, client_id):
+        super().__init__(client_data, client_id)
+        self.global_parameters = None
 
-class FedAvgGraphClient(BaseGraphClient):
-    
+    def set_parameters(self, parameters: List[np.ndarray]):
+        super().set_parameters(parameters)
+        self.global_parameters = [p.clone().detach().to(self.device)
+                                   for p in self.model.parameters()]
+
     def fit(self, parameters: List[np.ndarray], config: Dict[str, Any]) -> Tuple[List[np.ndarray], int, Dict[str, Any]]:
-        self.set_parameters(parameters)
+        self.set_parameters(parameters) 
 
         x = self.client_data['x'].to(self.device)
         edge_index = self.client_data['edge_index'].to(self.device)
@@ -17,6 +24,7 @@ class FedAvgGraphClient(BaseGraphClient):
 
         lr = config.get("learning_rate", 0.01)
         local_epochs = config.get("local_epochs", 5)
+        mu = config.get("mu", 0.01)
 
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 
@@ -24,12 +32,18 @@ class FedAvgGraphClient(BaseGraphClient):
             optimizer.zero_grad()
             out = self.model(x, edge_index)
             loss = F.nll_loss(out[train_mask], y[train_mask])
+
+            if self.global_parameters is not None:
+                prox_loss = sum(torch.sum((w - w_global) ** 2)
+                                for w, w_global in zip(self.model.parameters(),
+                                                    self.global_parameters))
+                loss += (mu / 2) * prox_loss
+
             loss.backward()
             optimizer.step()
             self.last_loss = loss.item()
 
         num_samples = train_mask.sum().item()
-        
         self.model.eval()
         with torch.no_grad():
             out = self.model(x, edge_index)
@@ -47,5 +61,6 @@ class FedAvgGraphClient(BaseGraphClient):
             "num_samples": num_samples,
             "local_epochs": local_epochs,
             "learning_rate": lr,
+            "mu": mu
         }
         return self.get_parameters(config), num_samples, metrics

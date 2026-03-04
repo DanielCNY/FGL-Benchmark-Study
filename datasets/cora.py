@@ -1,4 +1,3 @@
-# datasets/cora.py
 import torch
 from torch_geometric.datasets import Planetoid
 import networkx as nx
@@ -9,6 +8,7 @@ from typing import Dict, Any, Tuple
 import numpy as np
 
 from .base_loader import BaseGraphLoader
+from utils.heterogeneity import compute_all_metrics
 
 class CoraLoader(BaseGraphLoader):
     
@@ -28,7 +28,11 @@ class CoraLoader(BaseGraphLoader):
         
         self._feature_dim = dataset.num_features
         self._num_classes = dataset.num_classes
-        
+
+        global_counts = torch.bincount(data.y)
+        global_label_dist = {i: count.item() / len(data.y) 
+                            for i, count in enumerate(global_counts) if count > 0}
+            
         if self.iid:
             client_nodes = self._partition_iid(data.num_nodes)
         else:
@@ -36,7 +40,7 @@ class CoraLoader(BaseGraphLoader):
         
         client_datasets = {}
         for cid, node_ids in client_nodes.items():
-            client_data = self._create_client_data(data, node_ids, cid)
+            client_data = self._create_client_data(data, node_ids, cid, global_label_dist)
             client_datasets[cid] = client_data
         
         global_test_set = {
@@ -80,7 +84,7 @@ class CoraLoader(BaseGraphLoader):
         
         return client_nodes
     
-    def _create_client_data(self, data, node_ids: torch.Tensor, client_id: str) -> Dict[str, Any]:
+    def _create_client_data(self, data, node_ids: torch.Tensor, client_id: str, global_label_dist: Dict[int, float]) -> Dict[str, Any]:
         perm = torch.randperm(len(node_ids))
         split_idx = int(0.8 * len(node_ids))
         train_ids = node_ids[perm[:split_idx]]
@@ -91,7 +95,7 @@ class CoraLoader(BaseGraphLoader):
         train_mask[train_ids] = True
         val_mask[val_ids] = True
         
-        return {
+        client_data = {
             'x': data.x,
             'y': data.y,
             'edge_index': data.edge_index,
@@ -100,6 +104,8 @@ class CoraLoader(BaseGraphLoader):
             'node_ids': node_ids,
             'client_id': client_id,
         }
+        client_data['heterogeneity'] = compute_all_metrics(client_data, global_label_dist)
+        return client_data
     
     def get_feature_dim(self) -> int:
         return self._feature_dim
