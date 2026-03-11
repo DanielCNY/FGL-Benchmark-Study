@@ -12,11 +12,13 @@ from typing import Dict, Optional, Tuple, List
 
 from task import load_partition, get_model
 from datasets.cora import CoraLoader
+from utils.environment import assign_environments
 
 CLIENT_MAP = {
     "fedavg": ("algorithms.fedavg.client", "FedAvgGraphClient"),
     "fedprox": ("algorithms.fedprox.client", "FedProxGraphClient"),
     "fednova": ("algorithms.fednova.client", "FedNovaGraphClient"),
+    "prototype": ("algorithms.prototype.client", "PrototypeGraphClient"),
 }
 
 def weighted_average(metrics):
@@ -30,7 +32,7 @@ class SaveModelStrategy(FedAvg):
         super().__init__(**kwargs)
         self.latest_parameters = None
         self.client_config = client_config or {}
-        self.client_metrics = {} 
+        self.client_metrics = {}
 
     def aggregate_fit(
         self,
@@ -50,7 +52,7 @@ class SaveModelStrategy(FedAvg):
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager
-    ) -> List[Tuple[ClientProxy, FitIns]]: 
+    ) -> List[Tuple[ClientProxy, FitIns]]:
         instructions = super().configure_fit(server_round, parameters, client_manager)
         new_instructions = []
         for client, fit_ins in instructions:
@@ -108,20 +110,39 @@ if __name__ == "__main__":
     print(f"Starting {algo.upper()} on {dataset.capitalize()} ({num_clients} clients, {num_rounds} rounds)")
     print(f"    local_epochs: {local_epochs}, learning_rate: {lr}")
 
-    if algo not in CLIENT_MAP:
-        raise ValueError(f"Unknown algorithm: {algo}. Choose from {list(CLIENT_MAP.keys())}")
+    env_labels = None
+    if algo == "prototype":
+        print("Computing environment labels from client data...")
+        loader = CoraLoader(num_clients=num_clients, iid=False, seed=42)
+        client_datasets, _ = loader.load_data()
+        env_labels = assign_environments(client_datasets, n_clusters=2) 
+        print(f"Environment assignments: {env_labels}")
 
-    module_path, class_name = CLIENT_MAP[algo]
-    module = __import__(module_path, fromlist=[class_name])
-    client_class = getattr(module, class_name)
+    if algo not in CLIENT_MAP and algo != "prototype":
+        raise ValueError(f"Unknown algorithm: {algo}. Choose from {list(CLIENT_MAP.keys())} + 'prototype'")
+
+    if algo in CLIENT_MAP:
+        module_path, class_name = CLIENT_MAP[algo]
+        module = __import__(module_path, fromlist=[class_name])
+        client_class = getattr(module, class_name)
+    else:
+        module_path, class_name = CLIENT_MAP["fedavg"]
+        module = __import__(module_path, fromlist=[class_name])
+        client_class = getattr(module, class_name)
 
     def client_fn(cid: str):
-        partition_id = int(cid)
-        client_data = load_partition(partition_id, num_partitions=num_clients)
-        return client_class(
-            client_data=client_data,
-            client_id=f"client_{cid}"
-        ).to_client()
+        try:
+            partition_id = int(cid)
+            client_data = load_partition(partition_id, num_partitions=num_clients)
+            # If you need environment labels for prototype, compute them here (but you already did before)
+            client = client_class(client_data=client_data, client_id=f"client_{cid}")
+            return client.to_client()
+        except Exception as e:
+            print(f"\n!!! Error creating client {cid}: {e} !!!")
+            import traceback
+            traceback.print_exc()
+            import sys; sys.stdout.flush()
+            raise  # re-raise to ensure Flower sees the failure
 
     def load_global_test_data():
         loader = CoraLoader(num_clients=num_clients)
@@ -130,18 +151,18 @@ if __name__ == "__main__":
 
     if algo == "fedavg" or algo == "fedprox":
         strategy = SaveModelStrategy(
-        client_config={
-            "learning_rate": lr,
-            "local_epochs": local_epochs,
-            "mu": mu,
-        },
-        fraction_fit=fraction_fit,
-        fraction_evaluate=fraction_evaluate,
-        min_fit_clients=num_clients,
-        min_evaluate_clients=num_clients,
-        min_available_clients=num_clients,
-        evaluate_metrics_aggregation_fn=weighted_average,
-    )
+            client_config={
+                "learning_rate": lr,
+                "local_epochs": local_epochs,
+                "mu": mu,
+            },
+            fraction_fit=fraction_fit,
+            fraction_evaluate=fraction_evaluate,
+            min_fit_clients=num_clients,
+            min_evaluate_clients=num_clients,
+            min_available_clients=num_clients,
+            evaluate_metrics_aggregation_fn=weighted_average,
+        )
     elif algo == "fednova":
         from algorithms.fednova.strategy import FedNovaStrategy
         from task import get_model
@@ -164,6 +185,25 @@ if __name__ == "__main__":
             min_available_clients=num_clients,
             evaluate_metrics_aggregation_fn=weighted_average,
         )
+    elif algo == "prototype":
+        from algorithms.prototype.strategy import EnvironmentHBDATrategy
+
+        strategy = EnvironmentHBDATrategy(
+            env_labels=env_labels,
+            client_config={
+                "learning_rate": lr,
+                "local_epochs": local_epochs,
+                "mu": mu, 
+            },
+            fraction_fit=fraction_fit,
+            fraction_evaluate=fraction_evaluate,
+            min_fit_clients=num_clients,
+            min_evaluate_clients=num_clients,
+            min_available_clients=num_clients,
+            evaluate_metrics_aggregation_fn=weighted_average,
+        )
+    else:
+        raise ValueError(f"Unsupported algorithm: {algo}")
 
     history = fl.simulation.start_simulation(
         client_fn=client_fn,
@@ -182,8 +222,7 @@ if __name__ == "__main__":
     else:
         print("No global parameters found – cannot evaluate test set.")
 
-        # After training and test evaluation
-    print("\n📊 Per-Client Performance & Heterogeneity:")
+    print("\nPer-Client Performance & Heterogeneity:")
     try:
         from datasets.cora import CoraLoader
         from utils.heterogeneity import compute_all_metrics
@@ -193,13 +232,11 @@ if __name__ == "__main__":
         loader = CoraLoader(num_clients=num_clients, iid=False, seed=42)
         client_datasets, test_data = loader.load_data()
 
-        # Compute global label distribution (if needed for fallback)
         all_labels = torch.cat([client_datasets[cid]['y'] for cid in client_datasets])
         global_counts = torch.bincount(all_labels)
-        global_label_dist = {i: count.item() / len(all_labels) 
-                            for i, count in enumerate(global_counts) if count > 0}
+        global_label_dist = {i: count.item() / len(all_labels)
+                             for i, count in enumerate(global_counts) if count > 0}
 
-        # Build a map from client_id to heterogeneity metrics
         hetero_by_client = {}
         for cid_str, client_data in client_datasets.items():
             if 'heterogeneity' in client_data:
@@ -207,7 +244,6 @@ if __name__ == "__main__":
             else:
                 hetero_by_client[cid_str] = compute_all_metrics(client_data, global_label_dist)
 
-        # Match using the 'client_id' field inside each metrics dict
         rows = []
         for proxy_id, metrics in strategy.client_metrics.items():
             client_id_str = metrics.get('client_id')
@@ -220,30 +256,71 @@ if __name__ == "__main__":
                 rows.append(row)
 
         if rows:
-            # Create full DataFrame
             df = pd.DataFrame(rows)
-            
-            # Save full data to CSV for later analysis
+
             csv_filename = f"client_metrics_{algo}_{num_rounds}rounds.csv"
             df.to_csv(csv_filename, index=False)
             print(f"Full client metrics saved to {csv_filename}")
 
-            # Display a clean summary table with selected columns
-            summary_cols = ['client', 'label_skew', 'homophily', 'largest_component_size', 
+            summary_cols = ['client', 'label_skew', 'homophily', 'largest_component_size',
                             'avg_degree', 'std_degree', 'loss', 'accuracy', 'num_samples']
-            # Only include columns that exist in the DataFrame
             summary_cols = [col for col in summary_cols if col in df.columns]
-            
+
             print("\nPer-Client Summary (selected metrics):")
-            # Use string formatting for aligned output
             header = " | ".join(f"{col:>20}" for col in summary_cols)
             print(header)
             print("-" * len(header))
             for _, row in df[summary_cols].iterrows():
-                line = " | ".join(f"{row[col]:>20.4f}" if isinstance(row[col], float) else f"{row[col]:>20}" for col in summary_cols)
+                line = " | ".join(
+                    f"{row[col]:>20.4f}" if isinstance(row[col], float) else f"{row[col]:>20}"
+                    for col in summary_cols
+                )
                 print(line)
 
-            # Optional plots (if matplotlib installed)
+            print("\nEnvironment Inference (EaDA ERE):")
+            try:
+                from sklearn.cluster import KMeans
+                from sklearn.decomposition import PCA
+                import numpy as np
+
+                proto_list = []
+                client_ids_for_env = []
+                acc_list = []
+                for row in rows:
+                    if 'feature_prototype' in row:
+                        proto_list.append(np.array(row['feature_prototype']))
+                        client_ids_for_env.append(row['client'])
+                        acc_list.append(row['accuracy'])
+
+                if len(proto_list) >= 2:
+                    proto_matrix = np.vstack(proto_list)
+
+                    n_clusters = min(3, len(proto_list) // 2)
+                    if n_clusters < 2:
+                        n_clusters = 2
+
+                    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+                    env_labels_post = kmeans.fit_predict(proto_matrix)
+
+                    print("\nClient → Environment mapping (post‑training):")
+                    for cid, env, acc in zip(client_ids_for_env, env_labels_post, acc_list):
+                        print(f"  {cid:>10} → environment {env} (accuracy: {acc:.4f})")
+
+                    env_acc = {}
+                    for env in range(n_clusters):
+                        env_acc[env] = [acc_list[i] for i in range(len(env_labels_post)) if env_labels_post[i] == env]
+
+                    print("\nMean accuracy per environment:")
+                    for env, accs in env_acc.items():
+                        print(f"  Environment {env}: {np.mean(accs):.4f} (n={len(accs)} clients)")
+                else:
+                    print("Not enough clients for clustering (need at least 2).")
+
+            except ImportError:
+                print("scikit-learn not installed – skipping environment inference.")
+            except Exception as e:
+                print(f"Environment inference failed: {e}")
+
             try:
                 import matplotlib.pyplot as plt
                 fig, axes = plt.subplots(1, 2, figsize=(12, 4))

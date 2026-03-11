@@ -44,6 +44,7 @@ class FedProxGraphClient(BaseGraphClient):
             self.last_loss = loss.item()
 
         num_samples = train_mask.sum().item()
+        
         self.model.eval()
         with torch.no_grad():
             out = self.model(x, edge_index)
