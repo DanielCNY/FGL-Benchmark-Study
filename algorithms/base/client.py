@@ -3,6 +3,9 @@ import flwr as fl
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 
+from models.gcn import GCN
+HIDDEN_DIM = 64
+
 class BaseGraphClient(fl.client.NumPyClient):
 
     def __init__(self, client_data: Dict[str, Any], client_id: str, model=None):
@@ -11,8 +14,9 @@ class BaseGraphClient(fl.client.NumPyClient):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         if model is None:
-            from task import get_model 
-            self.model = get_model()
+            feature_dim = client_data['x'].shape[1]
+            num_classes = len(torch.unique(client_data['y']))
+            self.model = GCN(in_channels=feature_dim, hidden_channels=HIDDEN_DIM, out_channels=num_classes)
         else:
             self.model = model
         

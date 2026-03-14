@@ -64,4 +64,6 @@ class PrototypeGraphClient(BaseGraphClient):
             "learning_rate": lr,
             "mu": mu
         }
+
+        metrics["test_key"] = 42
         return self.get_parameters(config), num_samples, metrics

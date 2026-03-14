@@ -86,6 +86,17 @@ def compute_feature_prototype(node_features: torch.Tensor, node_ids: torch.Tenso
     stds = client_features.std(axis=0)
     return np.concatenate([means, stds])
 
+def compute_class_prototypes(client_data, global_label_dist=None):
+    x = client_data['x']
+    y = client_data['y']
+    unique_classes = torch.unique(y)
+    class_prototypes = {}
+    for c in unique_classes:
+        mask = (y == c)
+        if mask.sum() > 0:
+            class_prototypes[int(c.item())] = x[mask].mean(dim=0).cpu().numpy()
+    return class_prototypes
+
 def compute_all_metrics(client_data: Dict[str, torch.Tensor], global_label_dist: Dict[int, float]) -> Dict[str, Any]:
     train_mask = client_data['train_mask']
     train_labels = client_data['y'][train_mask]
@@ -99,4 +110,5 @@ def compute_all_metrics(client_data: Dict[str, torch.Tensor], global_label_dist:
     metrics.update(compute_connectivity(edge_index, node_ids))
     metrics.update(compute_degree_stats(edge_index, node_ids))
     metrics['feature_prototype'] = compute_feature_prototype(x, node_ids)
+    metrics['class_prototypes'] = compute_class_prototypes(client_data)
     return metrics

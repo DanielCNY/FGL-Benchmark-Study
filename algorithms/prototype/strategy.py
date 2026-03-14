@@ -11,6 +11,7 @@ class EnvironmentHBDATrategy(fl.server.strategy.FedAvg):
         self.client_config = client_config or {}
         self.latest_parameters = None
         self.client_metrics = {}
+        self.global_class_prototypes = None
 
     def configure_fit(
         self, server_round: int, parameters: Parameters, client_manager
@@ -19,6 +20,11 @@ class EnvironmentHBDATrategy(fl.server.strategy.FedAvg):
         new_instructions = []
         for client, fit_ins in instructions:
             new_config = {**fit_ins.config, **self.client_config}
+            if self.global_class_prototypes is not None:
+                serializable = {
+                    str(k): v.tolist() for k, v in self.global_class_prototypes.items()
+                }
+                new_config["global_class_prototypes"] = serializable
             new_fit_ins = FitIns(fit_ins.parameters, new_config)
             new_instructions.append((client, new_fit_ins))
         return new_instructions
@@ -35,6 +41,35 @@ class EnvironmentHBDATrategy(fl.server.strategy.FedAvg):
         for client_proxy, fit_res in results:
             cid = client_proxy.cid
             self.client_metrics[cid] = fit_res.metrics
+
+        all_protos = []
+        for client_proxy, fit_res in results:
+            protos = fit_res.metrics.get("class_prototypes")
+            if protos is not None:
+                weight = fit_res.metrics.get("num_samples", 1)
+                all_protos.append((protos, weight))
+
+        if all_protos:
+            all_classes = set()
+            for protos, _ in all_protos:
+                all_classes.update(protos.keys())
+            global_protos = {}
+            total_weight = sum(w for _, w in all_protos)
+            for c in all_classes:
+                weighted_sum = None
+                weight_sum = 0
+                for protos, w in all_protos:
+                    if c in protos:
+                        if weighted_sum is None:
+                            weighted_sum = protos[c] * w
+                        else:
+                            weighted_sum += protos[c] * w
+                        weight_sum += w
+                if weighted_sum is not None:
+                    global_protos[c] = weighted_sum / weight_sum
+            self.global_class_prototypes = global_protos
+        else:
+            self.global_class_prototypes = None
 
         env_groups = {}
         for client_proxy, fit_res in results:
