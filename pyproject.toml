@@ -15,8 +15,7 @@ dependencies = [
     "pandas",
     "matplotlib",
     "scikit-learn",
-    "networkx",
-    "python-louvain",
+    "networkx"
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -30,14 +29,13 @@ serverapp = "server_app:app"
 clientapp = "client_app:app"
 
 [tool.flwr.app.config]
-algorithm = "fednova"
-dataset = "pubmed"
-num-clients = 10
+algorithm = "prototype"
+dataset = "actor"
+num-clients = 5
 num-server-rounds = 10
 learning-rate = 0.01
 local-epochs = 3
 mu = 0.01
-fedssa_mu = 0.1
 n_clusters = 2
 seed = 42
 
@@ -45,6 +43,6 @@ seed = 42
 default = "local-sim"
 
 [tool.flwr.federations.local-sim]
-options.num-supernodes = 10
+options.num-supernodes = 5
 options.backend.client-resources.num-cpus = 1
 options.backend.ray-init-args = { num_cpus = 6, num_gpus = 0, ignore_reinit_error = true }

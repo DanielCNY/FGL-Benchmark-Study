@@ -7,6 +7,9 @@ from utils.flower_utils import weighted_average, SaveModelStrategy
 
 HIDDEN_DIM = 64
 
+def no_op_aggregate(metrics):
+    return {}
+
 def get_server_components(config):
     algo = config["algorithm"]
     dataset = config["dataset"]
@@ -22,8 +25,16 @@ def get_server_components(config):
         from datasets.citeseer import CiteseerLoader as Loader
     elif dataset == "pubmed":
         from datasets.pubmed import PubMedLoader as Loader
+    elif dataset == "computers":
+        from datasets.computers import ComputersLoader as Loader
     elif dataset == "texas":
         from datasets.texas import TexasLoader as Loader
+    elif dataset == "cornell":
+        from datasets.cornell import CornellLoader as Loader
+    elif dataset == "wisconsin":
+        from datasets.wisconsin import WisconsinLoader as Loader
+    elif dataset == "actor":
+        from datasets.actor import ActorLoader as Loader
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
 
@@ -52,6 +63,7 @@ def get_server_components(config):
             min_evaluate_clients=num_clients,
             min_available_clients=num_clients,
             evaluate_metrics_aggregation_fn=weighted_average,
+            fit_metrics_aggregation_fn=no_op_aggregate,
         )
     elif algo == "fednova":
         from algorithms.fednova.strategy import FedNovaStrategy

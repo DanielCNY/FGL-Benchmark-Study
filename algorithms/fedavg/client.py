@@ -16,6 +16,9 @@ class FedAvgGraphClient(BaseGraphClient):
                                for p in self.model.parameters()]
         
     def fit(self, parameters: List[np.ndarray], config: Dict[str, Any]) -> Tuple[List[np.ndarray], int, Dict[str, Any]]:
+        import time
+        start_time = time.time()
+        
         self.set_parameters(parameters)
 
         x = self.client_data['x'].to(self.device)
@@ -48,6 +51,9 @@ class FedAvgGraphClient(BaseGraphClient):
             val_accuracy = val_correct / val_total if val_total > 0 else 0.0
         self.model.train()
 
+        end_time = time.time()
+        fit_duration = end_time - start_time
+
         metrics = {
             "loss": self.last_loss,
             "accuracy": val_accuracy,
@@ -55,5 +61,7 @@ class FedAvgGraphClient(BaseGraphClient):
             "num_samples": num_samples,
             "local_epochs": local_epochs,
             "learning_rate": lr,
+            "fit_duration": fit_duration,
+            "num_params": self.get_num_params(),
         }
         return self.get_parameters(config), num_samples, metrics

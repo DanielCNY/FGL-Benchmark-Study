@@ -16,6 +16,8 @@ class SaveModelStrategy(FedAvg):
         self.latest_parameters = None
         self.client_config = client_config or {}
         self.client_metrics = {}
+        self.global_class_prototypes = None
+        self.round_metrics = {}
 
     def aggregate_fit(
         self,
@@ -31,6 +33,21 @@ class SaveModelStrategy(FedAvg):
         for client_proxy, fit_res in results:
             cid = client_proxy.cid
             self.client_metrics[cid] = fit_res.metrics
+
+        total_upload = sum(m.get("num_params", 0) for m in self.client_metrics.values())
+        total_download = total_upload
+        fit_durations = [m.get("fit_duration", 0) for m in self.client_metrics.values()]
+        mean_fit_duration = np.mean(fit_durations) if fit_durations else 0.0
+        sampled_clients = self.min_fit_clients if hasattr(self, 'min_fit_clients') else len(results) + len(failures)
+        participation_rate = len(results) / sampled_clients if sampled_clients > 0 else 0.0
+        
+        self.round_metrics[server_round] = {
+            "total_upload_params": total_upload,
+            "total_download_params": total_download,
+            "mean_fit_duration": mean_fit_duration,
+            "participation_rate": participation_rate,
+        }
+        
         return aggregated_parameters, aggregated_metrics
 
     def configure_fit(

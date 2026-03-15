@@ -32,8 +32,16 @@ def get_client_fn(config):
             from datasets.citeseer import CiteseerLoader as Loader
         elif dataset == "pubmed":
             from datasets.pubmed import PubMedLoader as Loader
+        elif dataset == "computers":
+            from datasets.computers import ComputersLoader as Loader
         elif dataset == "texas":
             from datasets.texas import TexasLoader as Loader
+        elif dataset == "cornell":
+            from datasets.cornell import CornellLoader as Loader
+        elif dataset == "wisconsin":
+            from datasets.wisconsin import WisconsinLoader as Loader
+        elif dataset == "actor":
+            from datasets.actor import ActorLoader as Loader
         else:
             raise ValueError(f"Unknown dataset: {dataset}")
 

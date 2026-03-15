@@ -81,3 +81,6 @@ class BaseGraphClient(fl.client.NumPyClient):
             "num_train": self.get_num_train_samples(),
             "num_val": self.client_data['val_mask'].sum().item()
         }
+    
+    def get_num_params(self):
+        return sum(p.numel() for p in self.model.parameters())

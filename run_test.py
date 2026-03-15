@@ -81,6 +81,36 @@ def main():
         evaluate_global_model(global_weights, global_test_set, feature_dim, num_classes)
     else:
         print("No global parameters found – cannot evaluate test set.")
+    
+    acc_history = history.metrics_distributed["accuracy"]
+    target_acc = 0.8
+    rounds_to_target = None
+    for round_num, acc in acc_history:
+        if acc >= target_acc:
+            rounds_to_target = round_num
+            break
+    print(f"\nRounds to reach {target_acc:.0%} accuracy: {rounds_to_target or 'Not reached'}")
+
+    acc_history = [acc for _, acc in history.metrics_distributed["accuracy"]]
+    if len(acc_history) >= 5:
+        last_5_std = np.std(acc_history[-5:])
+        print(f"Accuracy stability (last 5 rounds): {last_5_std:.4f}")
+
+    print("\nCommunication & Time Summary:")
+    total_params = sum(r["total_upload_params"] for r in strategy.round_metrics.values())
+    print(f"Total parameters uploaded: {total_params:,}")
+    avg_time = np.mean([r["mean_fit_duration"] for r in strategy.round_metrics.values()])
+    print(f"Average client fit time per round: {avg_time:.4f}s")
+
+    print("\nClient Participation Summary:")
+    participation_rates = [r.get("participation_rate", 0) for r in strategy.round_metrics.values()]
+    if participation_rates:
+        avg_participation = np.mean(participation_rates)
+        min_participation = np.min(participation_rates)
+        print(f"  Average participation rate: {avg_participation:.2%}")
+        print(f"  Minimum participation rate: {min_participation:.2%}")
+    else:
+        print("  No round metrics available.")
 
     print("\nPer-Client Performance & Heterogeneity:")
     try:

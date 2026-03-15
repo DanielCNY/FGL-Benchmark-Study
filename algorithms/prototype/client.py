@@ -15,7 +15,10 @@ class PrototypeGraphClient(BaseGraphClient):
                                    for p in self.model.parameters()]
 
     def fit(self, parameters: List[np.ndarray], config: Dict[str, Any]) -> Tuple[List[np.ndarray], int, Dict[str, Any]]:
-        self.set_parameters(parameters) 
+        import time
+        start_time = time.time()
+        
+        self.set_parameters(parameters)
 
         x = self.client_data['x'].to(self.device)
         edge_index = self.client_data['edge_index'].to(self.device)
@@ -44,7 +47,7 @@ class PrototypeGraphClient(BaseGraphClient):
             self.last_loss = loss.item()
 
         num_samples = train_mask.sum().item()
-        
+
         self.model.eval()
         with torch.no_grad():
             out = self.model(x, edge_index)
@@ -55,6 +58,9 @@ class PrototypeGraphClient(BaseGraphClient):
             val_accuracy = val_correct / val_total if val_total > 0 else 0.0
         self.model.train()
 
+        end_time = time.time()
+        fit_duration = end_time - start_time
+
         metrics = {
             "loss": self.last_loss,
             "accuracy": val_accuracy,
@@ -62,8 +68,9 @@ class PrototypeGraphClient(BaseGraphClient):
             "num_samples": num_samples,
             "local_epochs": local_epochs,
             "learning_rate": lr,
-            "mu": mu
+            "mu": mu,
+            "fit_duration": fit_duration,
+            "num_params": self.get_num_params(),
         }
 
-        metrics["test_key"] = 42
         return self.get_parameters(config), num_samples, metrics

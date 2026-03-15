@@ -15,6 +15,8 @@ class FedNovaStrategy(fl.server.strategy.FedAvg):
         self.current_global_weights = None
         self.latest_parameters = initial_parameters
         self.client_metrics = {}
+        self.global_class_prototypes = None
+        self.round_metrics = {}
 
         if initial_parameters is not None:
             self.current_global_weights = parameters_to_ndarrays(initial_parameters)
@@ -60,6 +62,20 @@ class FedNovaStrategy(fl.server.strategy.FedAvg):
                 weighted_sum = [w * delta_layer for w, delta_layer in zip([weight]*len(delta), delta)]
             else:
                 weighted_sum = [ws + w * delta_layer for ws, w, delta_layer in zip(weighted_sum, [weight]*len(delta), delta)]
+
+        total_upload = sum(m.get("num_params", 0) for m in self.client_metrics.values())
+        total_download = total_upload
+        fit_durations = [m.get("fit_duration", 0) for m in self.client_metrics.values()]
+        mean_fit_duration = np.mean(fit_durations) if fit_durations else 0.0
+        sampled_clients = self.min_fit_clients if hasattr(self, 'min_fit_clients') else len(results) + len(failures)
+        participation_rate = len(results) / sampled_clients if sampled_clients > 0 else 0.0
+        
+        self.round_metrics[server_round] = {
+            "participation_rate": participation_rate,
+            "total_upload_params": total_upload,
+            "total_download_params": total_download,
+            "mean_fit_duration": mean_fit_duration,
+        }
 
         avg_delta = [ws / total_weight for ws in weighted_sum]
 
