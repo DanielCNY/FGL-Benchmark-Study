@@ -29,20 +29,20 @@ serverapp = "server_app:app"
 clientapp = "client_app:app"
 
 [tool.flwr.app.config]
-algorithm = "prototype"
-dataset = "actor"
-num-clients = 5
-num-server-rounds = 10
+algorithm = "fedavg"
+dataset = "cornell"
+num-clients = 10
+num-server-rounds = 50
 learning-rate = 0.01
 local-epochs = 3
 mu = 0.01
 n_clusters = 2
-seed = 42
+seed = 360
 
 [tool.flwr.federations]
 default = "local-sim"
 
 [tool.flwr.federations.local-sim]
-options.num-supernodes = 5
+options.num-supernodes = 10
 options.backend.client-resources.num-cpus = 1
 options.backend.ray-init-args = { num_cpus = 6, num_gpus = 0, ignore_reinit_error = true }

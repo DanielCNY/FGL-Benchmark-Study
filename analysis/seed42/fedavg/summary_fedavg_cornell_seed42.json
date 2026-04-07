@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedavg",
+  "dataset": "cornell",
+  "seed": 42,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.6857142857142857,
+  "test_loss": 3.37579345703125,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.02108185106778919,
+  "total_params_uploaded": 54690500,
+  "avg_fit_time_per_round": 0.018967649459838868,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedavg_on_cornell_seed42.csv",
+  "scatter_plot": "analysis/scatter_fedavg_cornell_seed42.png"
+}

@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedprox",
+  "dataset": "citeseer",
+  "seed": 42,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.719,
+  "test_loss": 1.1071399450302124,
+  "rounds_to_target": 6,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.007333706252617528,
+  "total_params_uploaded": 118723000,
+  "avg_fit_time_per_round": 0.43806518077850337,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedprox_on_citeseer_seed42.csv",
+  "scatter_plot": "analysis/scatter_fedprox_citeseer_seed42.png"
+}

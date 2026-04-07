@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedprox",
+  "dataset": "computers",
+  "seed": 121,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.3729060451565914,
+  "test_loss": 2.00874924659729,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.03768931785986678,
+  "total_params_uploaded": 24901000,
+  "avg_fit_time_per_round": 3.131338810443878,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedprox_on_computers_seed121.csv",
+  "scatter_plot": "analysis/scatter_fedprox_computers_seed121.png"
+}

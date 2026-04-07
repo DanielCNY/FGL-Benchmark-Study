@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedprox",
+  "dataset": "cornell",
+  "seed": 121,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.7142857142857143,
+  "test_loss": 1.6690350770950317,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.028577380332470387,
+  "total_params_uploaded": 54690500,
+  "avg_fit_time_per_round": 0.02262730550765991,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedprox_on_cornell_seed121.csv",
+  "scatter_plot": "analysis/scatter_fedprox_cornell_seed121.png"
+}

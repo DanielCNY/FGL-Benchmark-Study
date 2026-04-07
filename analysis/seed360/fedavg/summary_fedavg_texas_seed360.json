@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedavg",
+  "dataset": "texas",
+  "seed": 360,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.6571428571428571,
+  "test_loss": 2.320974349975586,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.012909944487358075,
+  "total_params_uploaded": 54690500,
+  "avg_fit_time_per_round": 0.01976619529724121,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedavg_on_texas_seed360.csv",
+  "scatter_plot": "analysis/scatter_fedavg_texas_seed360.png"
+}

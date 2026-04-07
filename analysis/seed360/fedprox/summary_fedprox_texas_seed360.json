@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedprox",
+  "dataset": "texas",
+  "seed": 360,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.7428571428571429,
+  "test_loss": 1.484049916267395,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.012247448713915874,
+  "total_params_uploaded": 54690500,
+  "avg_fit_time_per_round": 0.023782990455627442,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedprox_on_texas_seed360.csv",
+  "scatter_plot": "analysis/scatter_fedprox_texas_seed360.png"
+}

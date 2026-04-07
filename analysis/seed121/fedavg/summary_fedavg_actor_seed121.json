@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedavg",
+  "dataset": "actor",
+  "seed": 121,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.4542462146148782,
+  "test_loss": 1.5020140409469604,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.0004362799159253453,
+  "total_params_uploaded": 30018500,
+  "avg_fit_time_per_round": 0.32623913764953616,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fedavg_on_actor_seed121.csv",
+  "scatter_plot": "analysis/scatter_fedavg_actor_seed121.png"
+}

@@ -1,0 +1,30 @@
+{
+  "algorithm": "prototype",
+  "dataset": "wisconsin",
+  "seed": 360,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.5510204081632653,
+  "test_loss": 3.320417642593384,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.013318529196373354,
+  "total_params_uploaded": 54690500,
+  "avg_fit_time_per_round": 0.02501066589355469,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_prototype_on_wisconsin_seed360.csv",
+  "environment_stats": {
+    "1": {
+      "mean_acc": 0.4333333333333333,
+      "count": 4
+    },
+    "0": {
+      "mean_acc": 0.20476190476190478,
+      "count": 6
+    }
+  },
+  "scatter_plot": "analysis/scatter_prototype_wisconsin_seed360.png"
+}

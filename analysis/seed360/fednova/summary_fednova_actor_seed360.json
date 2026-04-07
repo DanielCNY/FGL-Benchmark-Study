@@ -1,0 +1,20 @@
+{
+  "algorithm": "fednova",
+  "dataset": "actor",
+  "seed": 360,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.40618828176431865,
+  "test_loss": 1.4329699277877808,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.0009970667362032449,
+  "total_params_uploaded": 29418130,
+  "avg_fit_time_per_round": 0.2983106818199157,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_fednova_on_actor_seed360.csv",
+  "scatter_plot": "analysis/scatter_fednova_actor_seed360.png"
+}

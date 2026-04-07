@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedavg",
+  "dataset": "pubmed",
+  "seed": 42,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.876,
+  "test_loss": 0.36857208609580994,
+  "rounds_to_target": 15,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.0003292307197015773,
+  "total_params_uploaded": 16129500,
+  "avg_fit_time_per_round": 0.8051721210479736,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "client_metrics_fedavg_on_pubmed_seed42.csv",
+  "scatter_plot": "scatter_fedavg_pubmed_seed42.png"
+}

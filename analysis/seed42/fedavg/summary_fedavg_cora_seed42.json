@@ -1,0 +1,20 @@
+{
+  "algorithm": "fedavg",
+  "dataset": "cora",
+  "seed": 42,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.822,
+  "test_loss": 0.7383812665939331,
+  "rounds_to_target": 10,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.0033360657848175356,
+  "total_params_uploaded": 46115500,
+  "avg_fit_time_per_round": 0.15684699010849,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "client_metrics_fedavg_on_cora_seed42.csv",
+  "scatter_plot": "scatter_fedavg_cora_seed42.png"
+}

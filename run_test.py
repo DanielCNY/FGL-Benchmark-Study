@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from flwr.common import parameters_to_ndarrays
 from collections import OrderedDict
+import json
+import os
 
 from server_app import get_server_components
 from client_app import get_client_fn
@@ -49,6 +51,7 @@ def main():
         pyproject = tomllib.load(f)
 
     config = pyproject["tool"]["flwr"]["app"]["config"]
+    seed = config.get("seed", 42)
 
     algo = config["algorithm"]
     dataset = config["dataset"]
@@ -56,9 +59,10 @@ def main():
     num_rounds = config["num-server-rounds"]
     local_epochs = config.get("local-epochs", 3)
     lr = config.get("learning-rate", 0.01)
+    target_acc = 0.75
 
     print(f"Starting {algo.upper()} on {dataset.capitalize()} ({num_clients} clients, {num_rounds} rounds)")
-    print(f"    local_epochs: {local_epochs}, learning_rate: {lr}")
+    print(f"    local_epochs: {local_epochs}, learning_rate: {lr}, seed: {seed}")
 
     strategy, server_config, client_datasets, global_test_set, loader = get_server_components(config)
     feature_dim = loader.get_feature_dim()
@@ -78,41 +82,65 @@ def main():
     print("\nTraining finished. Evaluating on global test set...")
     if hasattr(strategy, 'latest_parameters') and strategy.latest_parameters is not None:
         global_weights = parameters_to_ndarrays(strategy.latest_parameters)
-        evaluate_global_model(global_weights, global_test_set, feature_dim, num_classes)
+        test_acc, test_loss = evaluate_global_model(global_weights, global_test_set, feature_dim, num_classes)
     else:
+        test_acc, test_loss = None, None
         print("No global parameters found – cannot evaluate test set.")
     
+    summary = {
+        "algorithm": algo,
+        "dataset": dataset,
+        "seed": seed,
+        "num_clients": num_clients,
+        "num_rounds": num_rounds,
+        "local_epochs": local_epochs,
+        "learning_rate": lr,
+        "test_accuracy": test_acc,
+        "test_loss": test_loss,
+    }
+
     acc_history = history.metrics_distributed["accuracy"]
-    target_acc = 0.8
     rounds_to_target = None
     for round_num, acc in acc_history:
         if acc >= target_acc:
             rounds_to_target = round_num
             break
     print(f"\nRounds to reach {target_acc:.0%} accuracy: {rounds_to_target or 'Not reached'}")
+    summary["rounds_to_target"] = rounds_to_target
+    summary["target_accuracy"] = target_acc
 
-    acc_history = [acc for _, acc in history.metrics_distributed["accuracy"]]
-    if len(acc_history) >= 5:
-        last_5_std = np.std(acc_history[-5:])
+    acc_vals = [acc for _, acc in history.metrics_distributed["accuracy"]]
+    if len(acc_vals) >= 5:
+        last_5_std = np.std(acc_vals[-5:])
         print(f"Accuracy stability (last 5 rounds): {last_5_std:.4f}")
+        summary["stability_last_5"] = last_5_std
+    else:
+        summary["stability_last_5"] = None
 
-    print("\nCommunication & Time Summary:")
     total_params = sum(r["total_upload_params"] for r in strategy.round_metrics.values())
-    print(f"Total parameters uploaded: {total_params:,}")
     avg_time = np.mean([r["mean_fit_duration"] for r in strategy.round_metrics.values()])
+    print("\nCommunication & Time Summary:")
+    print(f"Total parameters uploaded: {total_params:,}")
     print(f"Average client fit time per round: {avg_time:.4f}s")
+    summary["total_params_uploaded"] = total_params
+    summary["avg_fit_time_per_round"] = avg_time
 
-    print("\nClient Participation Summary:")
     participation_rates = [r.get("participation_rate", 0) for r in strategy.round_metrics.values()]
     if participation_rates:
         avg_participation = np.mean(participation_rates)
         min_participation = np.min(participation_rates)
+        print("\nClient Participation Summary:")
         print(f"  Average participation rate: {avg_participation:.2%}")
         print(f"  Minimum participation rate: {min_participation:.2%}")
+        summary["avg_participation_rate"] = avg_participation
+        summary["min_participation_rate"] = min_participation
     else:
-        print("  No round metrics available.")
+        print("\nNo round metrics available.")
+        summary["avg_participation_rate"] = None
+        summary["min_participation_rate"] = None
 
     print("\nPer-Client Performance & Heterogeneity:")
+    per_client_csv = None
     try:
         all_labels = torch.cat([client_datasets[cid]['y'] for cid in client_datasets])
         global_counts = torch.bincount(all_labels)
@@ -125,25 +153,30 @@ def main():
             else:
                 hetero_by_client[cid_str] = compute_all_metrics(client_data, global_label_dist)
 
+        scalar_hetero_cols = ['label_skew', 'homophily', 'largest_component_size',
+                              'avg_degree', 'std_degree']
+
         rows = []
         for proxy_id, metrics in strategy.client_metrics.items():
             client_id_str = metrics.get('client_id')
             if client_id_str in hetero_by_client:
-                row = {
-                    'client': client_id_str,
-                    **hetero_by_client[client_id_str],
-                    **metrics
-                }
+                row = {'client': client_id_str}
+                for col in scalar_hetero_cols:
+                    if col in hetero_by_client[client_id_str]:
+                        row[col] = hetero_by_client[client_id_str][col]
+                row.update(metrics)
                 rows.append(row)
 
         if rows:
             df = pd.DataFrame(rows)
-            csv_filename = f"client_metrics_{config['algorithm']}_{config['num-server-rounds']}rounds.csv"
-            df.to_csv(csv_filename, index=False)
-            print(f"Full client metrics saved to {csv_filename}")
+            per_client_csv = f"analysis/client_metrics_{algo}_on_{dataset}_seed{seed}.csv"
+            df.to_csv(per_client_csv, index=False)
+            print(f"Full client metrics saved to {per_client_csv}")
+            summary["per_client_csv"] = per_client_csv
 
             summary_cols = ['client', 'label_skew', 'homophily', 'largest_component_size',
-                            'avg_degree', 'std_degree', 'loss', 'accuracy', 'num_samples']
+                            'avg_degree', 'std_degree', 'loss', 'accuracy', 'num_samples',
+                            'fit_duration', 'num_params']
             summary_cols = [col for col in summary_cols if col in df.columns]
             print("\nPer-Client Summary (selected metrics):")
             header = " | ".join(f"{col:>20}" for col in summary_cols)
@@ -156,7 +189,7 @@ def main():
                 )
                 print(line)
 
-            if config['algorithm'] == "prototype":
+            if algo == "prototype":
                 print("\nEnvironment grouping used during training:")
                 if hasattr(strategy, 'env_labels') and strategy.env_labels is not None:
                     env_used = {}
@@ -176,6 +209,8 @@ def main():
                     for env in sorted(client_acc.keys()):
                         accs = client_acc[env]
                         print(f"  Environment {env}: {np.mean(accs):.4f} (n={len(accs)} clients)")
+                    summary["environment_stats"] = {str(env): {"mean_acc": np.mean(accs), "count": len(accs)}
+                                                    for env, accs in client_acc.items()}
 
             try:
                 fig, axes = plt.subplots(1, 2, figsize=(12, 4))
@@ -188,13 +223,23 @@ def main():
                 axes[1].set_ylabel('Final Accuracy')
                 axes[1].set_title('Accuracy vs Label Skew')
                 plt.tight_layout()
+                plot_file = f"analysis/scatter_{algo}_{dataset}_seed{seed}.png"
+                plt.savefig(plot_file, dpi=150)
+                print(f"Scatter plots saved to {plot_file}")
                 plt.show()
+                summary["scatter_plot"] = plot_file
             except ImportError:
                 print("matplotlib not installed, skipping plots")
         else:
             print("No per-client metrics available after matching.")
     except Exception as e:
         print(f"Could not generate heterogeneity report: {e}")
+        summary["per_client_error"] = str(e)
+
+    summary_file = f"analysis/summary_{algo}_{dataset}_seed{seed}.json"
+    with open(summary_file, 'w') as f:
+        json.dump(summary, f, indent=2)
+    print(f"\nSummary saved to {summary_file}")
 
 if __name__ == "__main__":
     main()

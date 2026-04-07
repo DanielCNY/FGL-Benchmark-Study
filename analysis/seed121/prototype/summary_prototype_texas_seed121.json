@@ -1,0 +1,30 @@
+{
+  "algorithm": "prototype",
+  "dataset": "texas",
+  "seed": 121,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.6857142857142857,
+  "test_loss": 1.5627963542938232,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.025055493963954848,
+  "total_params_uploaded": 54690500,
+  "avg_fit_time_per_round": 0.02441397762298584,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_prototype_on_texas_seed121.csv",
+  "environment_stats": {
+    "0": {
+      "mean_acc": 0.24074074074074073,
+      "count": 9
+    },
+    "1": {
+      "mean_acc": 0.3333333333333333,
+      "count": 1
+    }
+  },
+  "scatter_plot": "analysis/scatter_prototype_texas_seed121.png"
+}

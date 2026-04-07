@@ -1,0 +1,30 @@
+{
+  "algorithm": "prototype",
+  "dataset": "citeseer",
+  "seed": 42,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.725,
+  "test_loss": 1.1560964584350586,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.0006730975398328906,
+  "total_params_uploaded": 118723000,
+  "avg_fit_time_per_round": 0.44036403322219847,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_prototype_on_citeseer_seed42.csv",
+  "environment_stats": {
+    "0": {
+      "mean_acc": 0.8021885521885522,
+      "count": 3
+    },
+    "1": {
+      "mean_acc": 0.7418844190747613,
+      "count": 7
+    }
+  },
+  "scatter_plot": "analysis/scatter_prototype_citeseer_seed42.png"
+}

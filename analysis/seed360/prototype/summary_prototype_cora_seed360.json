@@ -1,0 +1,30 @@
+{
+  "algorithm": "prototype",
+  "dataset": "cora",
+  "seed": 360,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.846,
+  "test_loss": 0.5390461087226868,
+  "rounds_to_target": 9,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.00042075736325379863,
+  "total_params_uploaded": 46115500,
+  "avg_fit_time_per_round": 0.1299106936454773,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_prototype_on_cora_seed360.csv",
+  "environment_stats": {
+    "1": {
+      "mean_acc": 0.8607242194198715,
+      "count": 7
+    },
+    "0": {
+      "mean_acc": 0.8182283666154634,
+      "count": 3
+    }
+  },
+  "scatter_plot": "analysis/scatter_prototype_cora_seed360.png"
+}

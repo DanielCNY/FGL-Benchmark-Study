@@ -1,0 +1,30 @@
+{
+  "algorithm": "prototype",
+  "dataset": "actor",
+  "seed": 121,
+  "num_clients": 10,
+  "num_rounds": 50,
+  "local_epochs": 3,
+  "learning_rate": 0.01,
+  "test_accuracy": 0.42527978933508886,
+  "test_loss": 1.4399044513702393,
+  "rounds_to_target": null,
+  "target_accuracy": 0.8,
+  "stability_last_5": 0.002920200795250099,
+  "total_params_uploaded": 30018500,
+  "avg_fit_time_per_round": 0.33430535078048706,
+  "avg_participation_rate": 1.0,
+  "min_participation_rate": 1.0,
+  "per_client_csv": "analysis/client_metrics_prototype_on_actor_seed121.csv",
+  "environment_stats": {
+    "0": {
+      "mean_acc": 0.26390984486851354,
+      "count": 9
+    },
+    "1": {
+      "mean_acc": 0.2857142857142857,
+      "count": 1
+    }
+  },
+  "scatter_plot": "analysis/scatter_prototype_actor_seed121.png"
+}
