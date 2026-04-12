@@ -8,7 +8,7 @@ This repository contains the benchmark code, the raw outputs from individual sim
 
 The benchmark compares FedAvg, FedProx, FedNova, and a lightweight environment-aware prototype across homophilic and heterophilic graph datasets under a shared experimental setting.
 
-## Repository Structure
+## Repository Structure (Important Files)
 
 pyproject.toml
 Defines the settings for a single simulation, such as the algorithm, dataset, number of rounds, and number of clients.
@@ -28,21 +28,21 @@ This repository is organised around two stages.
 
 ### 1. Run a single simulation
 
-A single benchmark run is configured through pyproject.toml.
+Each run is configured through pyproject.toml.
 
-For example, this is where you set:
+This is where you set:
 
 - the algorithm
 - the dataset
 - the number of communication rounds
 - the number of clients
-- any other run-specific settings
+- any other simulation settings
 
 Once those settings are chosen, run:
 
 python run_test.py
 
-This produces the output for one simulation only.
+This produces the output for one simulation.
 
 ### 2. Build up a collection of simulations
 
@@ -54,23 +54,11 @@ Any new runs must be added in the same way and must follow the existing naming a
 
 ### 3. Aggregate the full results
 
-Once the analysis/ folder contains all of the simulations you want to include, run:
+Once the analysis/ folder contains all of the simulations, run:
 
 python aggregate_results.py
 
-This script does not run new experiments. It only reads the simulation summaries already present in analysis/ and produces the aggregated results.
-
-## Adding new runs
-
-To add more results to the benchmark:
-
-1. update the settings in pyproject.toml
-2. run one simulation with python run_test.py
-3. place the resulting summary files into the appropriate location inside analysis/
-4. keep the existing naming and folder structure consistent
-5. rerun python aggregate_results.py
-
-If the new files match the existing format and organisation, they will be included automatically in the aggregated outputs.
+This script outputs the aggregated results of all simulations, aswell as various summaries and plots.
 
 ## Reproducibility
 
