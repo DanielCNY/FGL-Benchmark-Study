@@ -66,12 +66,10 @@ print(" - accuracy_std_matrix.csv (table of std deviations)")
 print(" - rounds_matrix.csv (table of mean rounds to target)")
 print(" - rounds_std_matrix.csv (table of std deviations for rounds)")
 
-# --- Convergence and Parameter Summary ---
-# Compute overall mean rounds per algorithm (across datasets, ignoring NaNs)
+
 conv_summary = agg.groupby("algorithm")["mean_rounds"].agg(['mean', 'std']).reset_index()
 conv_summary.columns = ["algorithm", "mean_rounds_across_datasets", "std_rounds_across_datasets"]
 
-# Compute overall mean total parameters uploaded per algorithm
 params_summary = agg.groupby("algorithm")["mean_params"].agg(['mean', 'std']).reset_index()
 params_summary.columns = ["algorithm", "mean_params_across_datasets", "std_params_across_datasets"]
 
@@ -81,17 +79,15 @@ params_summary.to_csv("params_summary.csv", index=False)
 print(" - convergence_summary.csv (overall mean rounds per algorithm)")
 print(" - params_summary.csv (overall mean total params per algorithm)")
 
-# --- Optional bar chart for convergence speed ---
 try:
     import matplotlib.pyplot as plt
 
-    # Get list of datasets that have at least one non‑NaN rounds value
     valid_datasets = agg.dropna(subset=["mean_rounds"])["dataset"].unique()
     if len(valid_datasets) > 0:
         fig, ax = plt.subplots(figsize=(10, 6))
         width = 0.2
         x = np.arange(len(valid_datasets))
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # FedAvg, FedProx, FedNova, Prototype
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'] 
         for i, algo in enumerate(algorithms):
             means = []
             stds = []
@@ -132,7 +128,6 @@ homophily_map = {
 agg["homophily"] = agg["dataset"].map(homophily_map)
 agg.to_csv("aggregated_with_homophily.csv", index=False)
 
-# Keep your existing accuracy bar chart (optional, but title may need adjustment)
 try:
     import matplotlib.pyplot as plt
 

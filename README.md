@@ -1,75 +1,90 @@
----
-tags: [quickstart, vision, fds]
-dataset: [CIFAR-10]
-framework: [torch, torchvision]
----
+# FGL Benchmark Study
 
-# Federated Learning with PyTorch and Flower (Quickstart Example)
+Code and results for my Final Year Project on benchmarking Federated Graph Learning (FGL) under data heterogeneity.
 
-This introductory example to Flower uses PyTorch, but deep knowledge of PyTorch is not necessarily required to run the example. However, it will help you understand how to adapt Flower to your use case. Running this example in itself is quite easy. This example uses [Flower Datasets](https://flower.ai/docs/datasets/) to download, partition and preprocess the CIFAR-10 dataset.
+## Overview
 
-## Set up the project
+This repository contains the benchmark code, the raw outputs from individual simulations, and the script used to aggregate those outputs into the final reported results.
 
-### Fetch the app
+The benchmark compares FedAvg, FedProx, FedNova, and a lightweight environment-aware prototype across homophilic and heterophilic graph datasets under a shared experimental setting.
 
-Install Flower:
+## Repository Structure
 
-```shell
-pip install flwr
-```
+pyproject.toml
+Defines the settings for a single simulation, such as the algorithm, dataset, number of rounds, and number of clients.
 
-Fetch the app:
+run_test.py
+Runs one single simulation using the settings in pyproject.toml.
 
-```shell
-flwr new @flwrlabs/quickstart-pytorch
-```
+analysis/
+Stores the outputs from many completed simulations. These files are organised into subfolders, for example by seed or run group.
 
-This will create a new directory called `quickstart-pytorch` with the following structure:
+aggregate_results.py
+Reads all valid simulation summaries inside analysis/ and produces the aggregated results used for reporting.
 
-```shell
-quickstart-pytorch
-├── pytorchexample
-│   ├── __init__.py
-│   ├── client_app.py   # Defines your ClientApp
-│   ├── server_app.py   # Defines your ServerApp
-│   └── task.py         # Defines your model, training and data loading
-├── pyproject.toml      # Project metadata like dependencies and configs
-└── README.md
-```
+## How the workflow works
 
-### Install dependencies and project
+This repository is organised around two stages.
 
-Install the dependencies defined in `pyproject.toml` as well as the `pytorchexample` package.
+### 1. Run a single simulation
 
-```bash
-pip install -e .
-```
+A single benchmark run is configured through pyproject.toml.
 
-## Run the project
+For example, this is where you set:
 
-You can run your Flower project in both _simulation_ and _deployment_ mode without making changes to the code. If you are starting with Flower, we recommend you using the _simulation_ mode as it requires fewer components to be launched manually. By default, `flwr run` will make use of the Simulation Engine.
+- the algorithm
+- the dataset
+- the number of communication rounds
+- the number of clients
+- any other run-specific settings
 
-### Run with the Simulation Engine
+Once those settings are chosen, run:
 
-> [!TIP]
-> This example runs faster when the `ClientApp`s have access to a GPU. If your system has one, you can make use of it by configuring the `backend.client-resources` component in your Flower Configuration. Check the [Simulation Engine documentation](https://flower.ai/docs/framework/how-to-run-simulations.html) to learn more about Flower simulations and how to optimize them.
+python run_test.py
 
-```bash
-# Run with the default federation (CPU only)
-flwr run .
-```
+This produces the output for one simulation only.
 
-You can also override some of the settings for your `ClientApp` and `ServerApp` defined in `pyproject.toml`. For example:
+### 2. Build up a collection of simulations
 
-```bash
-flwr run . --run-config "num-server-rounds=5 learning-rate=0.05"
-```
+The full benchmark results in the dissertation were not produced from one run. They were produced from many separate simulations, each configured and run individually.
 
-> [!TIP]
-> For a more detailed walk-through check our [quickstart PyTorch tutorial](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html)
+After each run, the resulting summary files were placed into the analysis/ folder and organised into its current subfolder structure.
 
-### Run with the Deployment Engine
+Any new runs must be added in the same way and must follow the existing naming and folder conventions if they are to be included in the final aggregation.
 
-Follow this [how-to guide](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html) to run the same app in this example but with Flower's Deployment Engine. After that, you might be intersted in setting up [secure TLS-enabled communications](https://flower.ai/docs/framework/how-to-enable-tls-connections.html) and [SuperNode authentication](https://flower.ai/docs/framework/how-to-authenticate-supernodes.html) in your federation.
+### 3. Aggregate the full results
 
-If you are already familiar with how the Deployment Engine works, you may want to learn how to run it using Docker. Check out the [Flower with Docker](https://flower.ai/docs/framework/docker/index.html) documentation.
+Once the analysis/ folder contains all of the simulations you want to include, run:
+
+python aggregate_results.py
+
+This script does not run new experiments. It only reads the simulation summaries already present in analysis/ and produces the aggregated results.
+
+## Adding new runs
+
+To add more results to the benchmark:
+
+1. update the settings in pyproject.toml
+2. run one simulation with python run_test.py
+3. place the resulting summary files into the appropriate location inside analysis/
+4. keep the existing naming and folder structure consistent
+5. rerun python aggregate_results.py
+
+If the new files match the existing format and organisation, they will be included automatically in the aggregated outputs.
+
+## Reproducibility
+
+This repository includes:
+
+- the code used to run individual simulations
+- the configuration used to control those simulations
+- the collected raw summaries from many runs
+- the aggregation script used to produce the final benchmark results
+
+## Project Context
+
+This repository supports the dissertation:
+
+Benchmarking Federated Graph Learning Methods under Data Heterogeneity
+
+The goal of the project is to compare federated graph learning methods under shared heterogeneous conditions and to evaluate whether a lightweight environment-aware aggregation strategy can improve robustness across structurally different graph settings.
