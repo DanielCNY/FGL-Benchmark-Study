@@ -60,6 +60,19 @@ python aggregate_results.py
 
 This script outputs the aggregated results of all simulations, aswell as various summaries and plots.
 
+## Dependencies
+
+This project requires the following Python packages:
+
+- `flwr[simulation]`
+- `torch`
+- `torch-geometric`
+- `numpy`
+- `pandas`
+- `matplotlib`
+- `scikit-learn`
+- `networkx`
+
 ## Reproducibility
 
 This repository includes:
